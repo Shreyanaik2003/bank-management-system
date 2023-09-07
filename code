@@ -1,0 +1,440 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+#define MAX_CUSTOMERS 100
+
+struct Customer {
+    char name[50];
+    char address[100];
+    char phone[15];
+    char accountType[20];
+    char ifsc[12]; // Changed the size of IFSC to 12 to include null terminator
+    char accountNumber[21]; // Changed the size of Account Number to 21 to include null terminator
+    float balance;
+    
+
+};
+
+struct Customer *customers[MAX_CUSTOMERS];
+int numCustomers = 0;
+
+// Function prototypes
+void adminMenu();
+void userMenu();
+void addCustomer();
+void updateCustomer();
+struct Customer *findCustomerByAccountNumber(const char *accountNumber);
+void searchByAccountNumber();
+void searchByAccountName();
+void deposit();
+void withdraw();
+void checkBalance();
+void saveDataToFile();
+void loadDataFromFile();
+int isValidIFSC(const char *ifsc);
+int isValidPhoneNumber(const char *phoneNumber);
+int isValidAccountNumber(const char *accountNumber);
+
+int main() {
+    loadDataFromFile();
+    char person[10];
+    while (1) {
+        printf("\nAre you a user or admin? (Type 'user' or 'admin' or 'exit'): ");
+        scanf("%s", person);
+
+        if (strcmp(person, "admin") == 0) {
+            adminMenu();
+        } else if (strcmp(person, "user") == 0) {
+            userMenu();
+        } else if (strcmp(person, "exit") == 0) {
+            saveDataToFile(); // Save data before exiting
+            exit(0);
+        } else {
+            printf("Invalid choice.\n");
+        }
+    }
+
+    return 0;
+}
+
+void adminMenu() {
+    int choice1;
+    printf("\nBanking Application for Admin\n");
+    printf("*******************\n");
+    printf("1. New Account\n");
+    printf("2. Update Account\n");
+    printf("3. Find Account by Account number\n");
+    printf("4. Find Account by Account name\n");
+    printf("5. Save data to file\n");
+    printf("6. Exit\n");
+
+    printf("Select your choice : ");
+    scanf("%d", &choice1);
+
+    switch (choice1) {
+        case 1:
+            addCustomer();
+            break;
+        case 2:
+            updateCustomer();
+            break;
+        case 3:
+            searchByAccountNumber();
+            break;
+        case 4:
+            searchByAccountName();
+            break;
+        case 5:
+            saveDataToFile();
+            break;
+        case 6:
+            exit(0);
+        default:
+            printf("Invalid choice. Please try again.\n");
+    }
+}
+
+void userMenu() {
+    int choice2;
+    printf("Banking Transactions for User\n");
+    printf("********************\n");
+    printf("1. Update Account\n");
+    printf("2. Find Account by Account number\n");
+    printf("3. Deposit\n");
+    printf("4. Withdraw\n");
+    printf("5. Show Balance\n");
+    printf("6. Save data to file\n");
+    printf("7. Exit\n");
+    printf("Select your choice : ");
+    scanf("%d", &choice2);
+
+    switch (choice2) {
+        case 1:
+            updateCustomer();
+            break;
+        case 2:
+searchByAccountNumber();
+            break;
+        case 3:
+            deposit();
+            break;
+        case 4:
+            withdraw();
+            break;
+        case 5:
+            checkBalance();
+            break;
+        case 6:
+            saveDataToFile();
+            break;
+        case 7:
+            exit(0);
+        default:
+            printf("Invalid choice. Please try again.\n");
+    }
+}
+
+
+void addCustomer() {
+    if (numCustomers >= MAX_CUSTOMERS) {
+        printf("Cannot add more customers. The system is full.\n");
+        return;
+    }
+
+    struct Customer *newCustomer = (struct Customer *)malloc(sizeof(struct Customer));
+
+    printf("Enter Name: ");
+    scanf(" %[^\n]", newCustomer->name);
+
+    printf("Enter Address: ");
+    scanf(" %[^\n]", newCustomer->address);
+   
+
+    printf("Enter Phone Number: ");
+    scanf(" %s", newCustomer->phone);
+    if (!isValidPhoneNumber(newCustomer->phone)) {
+        printf("Invalid phone number format. Please enter a valid phone number.\n");
+        free(newCustomer);
+        return;
+    }
+    printf("Enter Account Type: ");
+    scanf(" %[^\n]", newCustomer->accountType);
+
+    printf("Enter IFSC Number: ");
+    scanf(" %s", newCustomer->ifsc);
+
+    // Validate IFSC number
+    if (!isValidIFSC(newCustomer->ifsc)) {
+        printf("Invalid IFSC number format. Please enter a valid IFSC.\n");
+        free(newCustomer); // Free the allocated memory
+        return;
+    }
+
+    printf("Enter Account Number: ");
+    scanf(" %s", newCustomer->accountNumber);
+
+    // Validate account number
+    if (!isValidAccountNumber(newCustomer->accountNumber)) {
+        printf("Invalid account number format. Please enter a valid account number.\n");
+        free(newCustomer); // Free the allocated memory
+        return;
+    }
+
+    printf("Enter Initial Deposit Amount: ");
+    scanf("%f", &newCustomer->balance);
+
+    customers[numCustomers] = newCustomer;
+    numCustomers++;
+
+    printf("Customer added successfully!\n");
+}
+
+
+void updateCustomer() {
+    char accountNumber[20];
+    printf("Enter the Account Number of the customer to update: ");
+    scanf(" %s", accountNumber);
+
+    struct Customer *customerToUpdate = findCustomerByAccountNumber(accountNumber);
+    if (customerToUpdate == NULL) {
+        printf("Customer with Account Number %s not found.\n", accountNumber);
+        return;
+    }
+
+    printf("Enter new Name: ");
+    scanf(" %[^\n]", customerToUpdate->name);
+
+    printf("Enter new Address: ");
+    scanf(" %[^\n]", customerToUpdate->address);
+
+    printf("Enter new Phone Number: ");
+    scanf(" %s", customerToUpdate->phone);
+
+    // Validate phone number
+    if (!isValidPhoneNumber(customerToUpdate->phone)) {
+        printf("Invalid phone number format. Please enter a valid phone number.\n");
+        return;
+    }
+
+    printf("Customer information updated successfully!\n");
+}
+
+struct Customer *findCustomerByAccountNumber(const char *accountNumber) {
+    int i;
+    for (i = 0; i < numCustomers; i++) {
+        if (strcmp(accountNumber, customers[i]->accountNumber) == 0) {
+            return customers[i];
+        }
+    }
+    return NULL;
+}
+
+void searchByAccountNumber() {
+    char accountNumber[20];
+    printf("Enter the Account Number of the customer to search: ");
+    scanf(" %s", accountNumber);
+
+    struct Customer *customer = findCustomerByAccountNumber(accountNumber);
+    if (customer == NULL) {
+        printf("Customer with Account Number %s not found.\n", accountNumber);
+        return;
+    }
+
+    printf("Account Number: %s\n", customer->accountNumber);
+    printf("Name: %s\n", customer->name);
+    printf("IFSC Number: %s\n", customer->ifsc);
+    printf("Address: %s\n", customer->address);
+    printf("Phone Number: %s\n", customer->phone);
+    printf("Account Type: %s\n", customer->accountType);
+    printf("Balance: %.2f\n", customer->balance);
+}
+
+void searchByAccountName() {
+    char accountName[50];
+    printf("Enter the Account Name of the customer to search: ");
+    scanf(" %[^\n]", accountName);
+
+    int i;
+    int found = 0;
+    for (i = 0; i < numCustomers; i++) {
+        if (strcmp(accountName, customers[i]->name) == 0) {
+            printf("Account Number: %s\n", customers[i]->accountNumber);
+            printf("Name: %s\n", customers[i]->name);
+            printf("IFSC Number: %s\n", customers[i]->ifsc);
+            printf("Address: %s\n", customers[i]->address);
+            printf("Phone Number: %s\n", customers[i]->phone);
+            printf("Account Type: %s\n", customers[i]->accountType);
+            printf("Balance: %.2f\n", customers[i]->balance);
+            found = 1;
+        }
+    }
+
+    if (!found) {
+        printf("Customer with Account Name %s not found.\n", accountName);
+    }
+}
+
+void deposit() {
+    char accountNumber[20];
+    printf("Enter the Account Number to deposit money: ");
+    scanf(" %s", accountNumber);
+
+    struct Customer *customer = findCustomerByAccountNumber(accountNumber);
+    if (customer == NULL) {
+        printf("Customer with Account Number %s not found.\n", accountNumber);
+        return;
+    }
+
+    float amount;
+    printf("Enter the amount to deposit: ");
+    scanf("%f", &amount);
+
+    customer->balance += amount;
+    printf("Deposit successful. Updated Balance: %.2f\n", customer->balance);
+}
+
+void withdraw() {
+    char accountNumber[20];
+    printf("Enter the Account Number to withdraw money: ");
+    scanf(" %s", accountNumber);
+
+    struct Customer *customer = findCustomerByAccountNumber(accountNumber);
+    if (customer == NULL) {
+        printf("Customer with Account Number %s not found.\n", accountNumber);
+        return;
+    }
+
+    float amount;
+    printf("Enter the amount to withdraw: ");
+    scanf("%f", &amount);
+
+    if (amount > customer->balance) {
+        printf("Insufficient balance. Withdrawal not allowed.\n");
+        return;
+    }
+
+    customer->balance -= amount;
+    printf("Withdrawal successful. Updated Balance: %.2f\n", customer->balance);
+}
+
+void checkBalance() {
+    char accountNumber[20];
+    printf("Enter the Account Number to check balance: ");
+    scanf(" %s", accountNumber);
+
+    struct Customer *customer = findCustomerByAccountNumber(accountNumber);
+    if (customer == NULL) {
+        printf("Customer with Account Number %s not found.\n", accountNumber);
+        return;
+    }
+
+    printf("Account Number: %s\n", customer->accountNumber);
+    printf("Name: %s\n", customer->name);
+    printf("Balance: %.2f\n", customer->balance);
+}
+
+void saveDataToFile() {
+    FILE *file = fopen("customer_data.txt", "w");
+    if (file == NULL) {
+        printf("Error opening file. Data not saved.\n");
+        return;
+    }
+
+    for (int i = 0; i < numCustomers; i++) {
+        fprintf(file, "%s;%s;%s;%s;%s;%s;%.2f\n", customers[i]->name, customers[i]->address,
+                customers[i]->phone, customers[i]->accountType, customers[i]->ifsc,
+                customers[i]->accountNumber, customers[i]->balance);
+    }
+
+    fclose(file);
+    printf("Data saved successfully.\n");
+}
+
+void loadDataFromFile() {
+    FILE *file = fopen("customer_data.txt", "r");
+    if (file == NULL) {
+        printf("Error opening file. Starting with an empty database.\n");
+        return;
+    }
+
+    char buffer[256];
+    while (fgets(buffer, sizeof(buffer), file)) {
+        struct Customer *newCustomer = (struct Customer *)malloc(sizeof(struct Customer));
+        sscanf(buffer, "%[^;];%[^;];%[^;];%[^;];%[^;];%[^;];%f", newCustomer->name, newCustomer->address,
+               newCustomer->phone, newCustomer->accountType, newCustomer->ifsc,
+               newCustomer->accountNumber, &newCustomer->balance);
+
+        customers[numCustomers] = newCustomer;
+        numCustomers++;
+    }
+
+    fclose(file);
+    printf("Data loaded successfully.\n");
+}
+
+int isValidIFSC(const char *ifsc) {
+    // IFSC code must be exactly 11 characters long
+    if (strlen(ifsc) != 11) {
+        return 0;  // Invalid length
+    }
+
+    // First four characters must be uppercase alphabets
+    for (int i = 0; i < 4; i++) {
+        if (!isupper(ifsc[i])) {
+            return 0;  // Invalid character
+        }
+    }
+
+    // Fifth character must be 0 (zero)
+    if (ifsc[4] != '0') {
+        return 0;  // Invalid character
+    }
+    // The remaining six characters can be alphanumeric
+    for (int i = 5; i < 11; i++) {
+        if (!isalnum(ifsc[i])) {
+            return 0;  // Invalid character
+        }
+    }
+
+    return 1;  // Valid IFSC code
+}
+
+int isValidPhoneNumber(const char *phoneNumber) {
+    // Phone number must be exactly 10 digits long
+    if (strlen(phoneNumber) != 10) {
+        return 0;  // Invalid length
+    }
+
+    // Check if all characters are digits
+    for (int i = 0; i < 10; i++) {
+        if (!isdigit(phoneNumber[i])) {
+            return 0;  // Contains non-digit characters
+        }
+    }
+
+    return 1;  // Valid phone number
+}
+
+int isValidAccountNumber(const char *accountNumber) {
+    // Account number should not be empty
+    if (strlen(accountNumber) == 0) {
+        return 0;  // Invalid length
+    }
+
+    // Check if all characters are digits
+    for (int i = 0; i < 14; i++) {
+        if (!isdigit(accountNumber[i])) {
+            return 0;  // Contains non-digit characters
+        }
+    }
+
+    // You can add additional rules here based on the specific format required
+    // For example, check for a minimum and maximum length, or other format-specific rules
+
+    return 1;  // Valid account number
+}
+
+
+
