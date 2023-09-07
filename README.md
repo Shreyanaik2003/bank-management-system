@@ -36,7 +36,7 @@
     <li>Check balance</li>
   </ul>
    <h2>Mind Map</h2>
-  <img src= ></img>
+  <img src= "mindmap.jpg"></img>
 
   <h2>Flowchart</h2>
   <img src="flowchart.png"></img>
