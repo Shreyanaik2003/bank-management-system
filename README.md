@@ -3,7 +3,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Bank Management System</title>
+  
 </head>
 <body>
   <h1>Bank Management System</h1>
